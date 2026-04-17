@@ -1,12 +1,12 @@
 <?php
 /**
- * [File Path: /taiwaneinvoice/manage_allowance.php]
- * 台灣電子折讓單 (Allowance D0401) 管理與 XML 匯出
+ * 璦閣-臺灣電子發票模組 for Dolibarr V2x(符合財政部 MIG 4.1 規範)
+ * 版本：V1.0.1
+ * 開發公司：璦閣數位科技
+ * 開發者：Solo-Man(Vincent Tsai)
+ * 版權聲明：GPL-3
  *
- * @package    TaiwanEInvoice
- * @author     Solo-man (Vincent Tsai)
- * @copyright  Copyright (c) 2026 Solo-man. All rights reserved.
- * @license    GNU General Public License v3.0 (GPL-3.0)
+ * 檔案功能：折讓單 XML 匯出頁面
  */
 
 // 1. 環境載入與路徑自適應

@@ -1,17 +1,12 @@
 <?php
 /**
- * [File Path: /taiwaneinvoice/track_card.php]
- * 台灣電子發票模組 (Taiwan E-Invoice Module) - 新增字軌頁面
+ * 璦閣-臺灣電子發票模組 for Dolibarr V2x(符合財政部 MIG 4.1 規範)
+ * 版本：V1.0.1
+ * 開發公司：璦閣數位科技
+ * 開發者：Solo-Man(Vincent Tsai)
+ * 版權聲明：GPL-3
  *
- * @package    TaiwanEInvoice
- * @author     Solo-man (Vincent Tsai)
- * @copyright  Copyright (c) 2026 Solo-man. All rights reserved.
- * @license    GNU General Public License v3.0 (GPL-3.0)
- * ---------------------------------------------------------
- * 功能說明：
- * - 設定年度、期別與字軌。
- * - 支援「優先權 (sortorder)」設定，數字越大代表自動配號時越優先使用。
- * - 實作「攔截預檢」：自動計算結束號碼並提供格式驗證。
+ * 檔案功能：字軌卡片頁面，新增電子發票字軌
  */
 
 // 路徑隔離：相容於 /custom/ 或根目錄
@@ -24,8 +19,8 @@ if (file_exists("../../main.inc.php")) {
 require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
 require_once DOL_DOCUMENT_ROOT . '/core/lib/functions.lib.php';
 
-// 權限檢查：僅管理員可設定字軌
-if (!$user->admin) accessforbidden();
+// 權限檢查：需要管理員或發票讀取權限
+if (!$user->admin && !$user->rights->facture->lire) accessforbidden();
 
 $langs->load("taiwaneinvoice@taiwaneinvoice");
 

@@ -1,12 +1,12 @@
 <?php
 /**
- * [File Path: /taiwaneinvoice/track_list.php]
- * 台灣電子發票模組 (Taiwan E-Invoice Module) - 字軌管理列表
+ * 璦閣-臺灣電子發票模組 for Dolibarr V2x(符合財政部 MIG 4.1 規範)
+ * 版本：V1.0.1
+ * 開發公司：璦閣數位科技
+ * 開發者：Solo-Man(Vincent Tsai)
+ * 版權聲明：GPL-3
  *
- * @package    TaiwanEInvoice
- * @author     Solo-man (Vincent Tsai)
- * @copyright  Copyright (c) 2026 Solo-man. All rights reserved.
- * @license    GNU General Public License v3.0 (GPL-3.0)
+ * 檔案功能：字軌列表頁面，管理電子發票字軌
  */
 
 // 修正路徑以符合您的目錄結構 (如果是放在 custom 資料夾下)
@@ -18,8 +18,8 @@ if (file_exists("../../main.inc.php")) {
 
 require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
 
-// 權限檢查：僅限管理員
-if (!$user->admin) accessforbidden();
+// 權限檢查：需要管理員或發票讀取權限
+if (!$user->admin && !$user->rights->facture->lire) accessforbidden();
 
 $langs->load("taiwaneinvoice@taiwaneinvoice");
 

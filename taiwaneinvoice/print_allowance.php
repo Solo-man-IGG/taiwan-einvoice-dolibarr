@@ -1,8 +1,17 @@
 <?php
 /**
- * [File Path: /taiwaneinvoice/print_allowance.php]
- * 台灣電子發票：銷貨退回、進貨退出或折讓證明單 (A4 財政部規範)
+ * 璦閣-臺灣電子發票模組 for Dolibarr V2x(符合財政部 MIG 4.1 規範)
+ * 版本：V1.0.1
+ * 開發公司：璦閣數位科技
+ * 開發者：Solo-Man(Vincent Tsai)
+ * 版權聲明：GPL-3
+ *
+ * 檔案功能：折讓單證明聯列印
  */
+
+// 啟用錯誤顯示
+error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT);
+ini_set('display_errors', 1);
 
 $res = 0;
 if (file_exists("../../main.inc.php")) $res = @include "../../main.inc.php";
@@ -11,7 +20,26 @@ elseif (file_exists("../main.inc.php")) $res = @include "../main.inc.php";
 if (!$res) die("Error: Include main.inc.php failed.");
 
 require_once DOL_DOCUMENT_ROOT . '/compta/facture/class/facture.class.php';
-require_once DOL_DOCUMENT_ROOT . '/includes/tecnickcom/tcpdf/tcpdf.php';
+
+// 嘗試多個可能的 TCPDF 路徑
+$tcpdf_paths = array(
+    DOL_DOCUMENT_ROOT . '/includes/tecnickcom/tcpdf/tcpdf.php',
+    DOL_DOCUMENT_ROOT . '/../includes/tecnickcom/tcpdf/tcpdf.php',
+    dirname(DOL_DOCUMENT_ROOT) . '/includes/tecnickcom/tcpdf/tcpdf.php',
+);
+
+$tcpdf_loaded = false;
+foreach ($tcpdf_paths as $path) {
+    if (file_exists($path)) {
+        require_once $path;
+        $tcpdf_loaded = true;
+        break;
+    }
+}
+
+if (!$tcpdf_loaded) {
+    die("Error: TCPDF library not found. Tried paths: " . implode(', ', $tcpdf_paths));
+}
 
 $id = GETPOST('id', 'int');
 $object = new Facture($db);
@@ -33,7 +61,7 @@ $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
 $pdf->setPrintHeader(false);
 $pdf->setPrintFooter(false);
 $pdf->SetMargins(15, 15, 15);
-$font = 'msungstdlight'; // 確保 Dolibarr 有安裝此字體
+$font = 'cid0ct'; // 使用 TCPDF 內建繁體中文字體
 
 $copies = array("第一、二聯：銷貨方留存記帳", "第三、四聯：買受人留存記帳");
 
@@ -43,17 +71,23 @@ foreach ($copies as $copy_title) {
     $pdf->Cell(0, 10, "銷貨退回、進貨退出或折讓證明單", 0, 1, 'C');
     $pdf->SetFont($font, '', 10);
     $pdf->Cell(0, 6, $copy_title, 0, 1, 'R');
-    
+
+    // 處理時間戳，使用 Dolibarr 發票物件的日期
+    $inv_timestamp = (is_numeric($object->date) ? $object->date : $db->jdate($object->date));
+    if (empty($inv_timestamp)) {
+        $inv_timestamp = time(); // 防呆機制
+    }
+
     $pdf->Ln(5);
-    $pdf->Cell(90, 6, "開立日期：" . date('Y/m/d', $db->jdate($inv_data->date_creation)), 0, 0, 'L');
+    $pdf->Cell(90, 6, "開立日期：" . date('Y/m/d', $inv_timestamp), 0, 0, 'L');
     $pdf->Cell(90, 6, "折讓單號：" . $inv_data->allowance_no, 0, 1, 'R');
     
     // 買賣雙方資訊欄
     $pdf->SetFillColor(240, 240, 240);
     $pdf->Cell(90, 7, " 買受人", 1, 0, 'L', 1);
     $pdf->Cell(90, 7, " 銷貨人", 1, 1, 'L', 1);
-    $pdf->MultiCell(90, 20, "名稱：" . $object->thirdparty->name . "\n統編：" . $object->thirdparty->idprof1, 1, 'L', 0, 0);
-    $pdf->MultiCell(90, 20, "名稱：" . $mysoc->name . "\n統編：" . $mysoc->idprof1, 1, 'L', 0, 1);
+    $pdf->MultiCell(90, 20, "名稱：" . $object->thirdparty->name . "\n統編：" . $object->thirdparty->tva_intra, 1, 'L', 0, 0);
+    $pdf->MultiCell(90, 20, "名稱：" . $mysoc->name . "\n統編：" . $mysoc->tva_intra, 1, 'L', 0, 1);
     
     $pdf->Ln(5);
     
@@ -66,8 +100,33 @@ foreach ($copies as $copy_title) {
     $pdf->Cell(35, 8, "金額 (不含稅)", 1, 1, 'C', 1);
     
     $pdf->SetFont($font, '', 9);
+
+    // 處理原發票時間戳
+    $parent_timestamp = 0;
+    if (!empty($inv_data->parent_date_creation)) {
+        $parent_timestamp = $db->jdate($inv_data->parent_date_creation);
+        if (is_string($parent_timestamp)) {
+            $parent_timestamp = strtotime($parent_timestamp);
+        }
+    }
+
+    // 若無原發票日期，嘗試從原發票物件中獲取
+    if (empty($parent_timestamp) || $parent_timestamp < 0) {
+        if (!empty($object->fk_facture_source)) {
+            $parent_invoice = new Facture($db);
+            if ($parent_invoice->fetch($object->fk_facture_source) > 0) {
+                $parent_timestamp = (is_numeric($parent_invoice->date) ? $parent_invoice->date : $db->jdate($parent_invoice->date));
+            }
+        }
+    }
+
+    // 若仍無法獲取原發票日期，使用折讓單建立日期作為備選
+    if (empty($parent_timestamp) || $parent_timestamp < 0) {
+        $parent_timestamp = $inv_timestamp;
+    }
+
     foreach ($object->lines as $line) {
-        $parent_info = date('Y/m/d', $db->jdate($inv_data->parent_date_creation)) . "\n" . $inv_data->parent_invoice_no;
+        $parent_info = date('Y/m/d', $parent_timestamp) . "\n" . $inv_data->parent_invoice_no;
         $pdf->MultiCell(60, 10, $parent_info, 1, 'C', 0, 0);
         $pdf->Cell(50, 10, mb_substr($line->libelle, 0, 20), 1, 0, 'L');
         $pdf->Cell(15, 10, abs($line->qty), 1, 0, 'C'); // 折讓單數量取絕對值
