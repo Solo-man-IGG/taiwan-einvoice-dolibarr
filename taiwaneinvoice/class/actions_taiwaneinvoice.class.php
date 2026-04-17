@@ -13,6 +13,7 @@ class ActionsTaiwanEInvoice
 {
     private function isVoidable($invoice_date_timestamp)
     {
+        $invoice_date_timestamp = (int) $invoice_date_timestamp;
         $invoice_date = getdate($invoice_date_timestamp);
         $current_date = getdate(time());
         $invoice_year = $invoice_date['year'];
@@ -105,14 +106,21 @@ class ActionsTaiwanEInvoice
                 echo '<div id="taiwan-einv-info-display" style="margin: 15px 0; padding: 15px; background: #f9feff; border: 1px solid #bdeaff; border-left: 5px solid #0076ad; border-radius: 4px; clear: both; line-height: 1.8;">';
                 echo '<div class="einv-header" style="font-size: 14px; font-weight: bold; color: #0055aa; margin-bottom: 10px;">';
                 echo '<span style="font-size: 16px;">📄</span> 電子發票資訊';
-                if (!empty($display_invoice_no)) {
-                    echo ' <span style="margin-left:10px; color:#d22d2d;">發票號碼：'.$display_invoice_no.'</span>';
-                }
-                if (!empty($display_track_code)) {
-                    echo ' <span style="margin-left:10px; color:#0055aa;">字軌：'.$display_track_code.'</span>';
-                }
                 if (!empty($display_allowance_nos)) {
-                    echo ' <span style="margin-left:10px; color:#0055aa;">折讓單：'.implode(', ', $display_allowance_nos).'</span>';
+                    echo ' <span style="margin-left:10px; color:#0055aa;">/ 折讓單號</span>';
+                }
+                echo '</div>';
+                echo '<div style="margin-bottom: 10px;">';
+                $invoice_display = '';
+                if (!empty($display_track_code)) {
+                    $invoice_display .= $display_track_code;
+                }
+                if (!empty($display_invoice_no)) {
+                    $invoice_display .= $display_invoice_no;
+                }
+                echo '<span style="color:#d22d2d; font-weight: bold;">'.$invoice_display.'</span>';
+                if (!empty($display_allowance_nos)) {
+                    echo ' <span style="color:#0055aa;">/ '.implode(', ', $display_allowance_nos).'</span>';
                 }
                 echo '</div>';
                 if ($is_void) {
