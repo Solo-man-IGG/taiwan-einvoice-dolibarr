@@ -1,5 +1,5 @@
-# TaiwanEInvoice for Dolibarr (V1.0)
-
+# TaiwanEInvoice for Dolibarr (V1.0.1)
+修復V1.0的部份錯誤
 這是一個專為 **Dolibarr ERP** 設計的台灣電子發票模組，旨在提供符合中華民國財政部 **MIG 4.1 規範** 的電子發票管理解決方案。
 
 ## 🏢 開發維護
